@@ -35,6 +35,8 @@ dotnet tool install --global dotnet-ef
 Em seguida, execute:
 
 dotnet ef migrations add InitialCreate
+
+
 dotnet ef database update
 
 4️⃣ Rodar o servidor

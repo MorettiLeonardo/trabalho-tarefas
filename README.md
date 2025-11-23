@@ -16,6 +16,7 @@ C#
 Swagger (para testes via navegador)
 
 ⚙️ Como Executar o Projeto
+
 1️⃣ Clonar o repositório
 git clone https://github.com/seunome/sistema-tarefas.git
 cd sistema-tarefas

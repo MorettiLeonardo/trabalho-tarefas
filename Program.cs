@@ -6,7 +6,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>();
 
+builder.Services.AddCors(options =>
+    options.AddPolicy("Acesso Total",
+        configs => configs
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod())
+);
+
 var app = builder.Build();
+
+app.UseCors("Acesso Total");
 
 // endpoints de usuarios
 app.MapPost("/usuario", async (Usuario usuario, AppDbContext context) =>
@@ -23,7 +33,7 @@ app.MapGet("/usuario", async (AppDbContext context) =>
 
     if (usuarios is null)
     {
-        return Results.NotFound("Usuário não encontrado");
+        return Results.NotFound("Usuï¿½rio nï¿½o encontrado");
     }
 
     return Results.Ok(usuarios);
@@ -32,12 +42,11 @@ app.MapGet("/usuario", async (AppDbContext context) =>
 app.MapGet("/usuario/{id}", async (int id, AppDbContext context) =>
 {
     var usuario = await context.Usuario
-        .Where(u => u.Id == id)
-        .ToListAsync();
+        .FirstOrDefaultAsync(u => u.Id == id);
 
     if (usuario is null)
     {
-        return Results.NotFound("Usuário não encontrado");
+        return Results.NotFound("Usuï¿½rio nï¿½o encontrado");
     }
 
     return Results.Ok(usuario);
@@ -49,7 +58,7 @@ app.MapPut("/usuario/{id}", async (int id, Usuario usuario, AppDbContext context
 
     if (usuarioExistente is null)
     {
-        return Results.NotFound("Usuário não encontrado");
+        return Results.NotFound("Usuï¿½rio nï¿½o encontrado");
     }
 
     usuarioExistente.Nome = usuario.Nome;
@@ -57,7 +66,7 @@ app.MapPut("/usuario/{id}", async (int id, Usuario usuario, AppDbContext context
 
     await context.SaveChangesAsync();
 
-    return Results.Ok("Usuário atualizado com sucesso");
+    return Results.Ok("Usuï¿½rio atualizado com sucesso");
 });
 
 app.MapDelete("/usuario/{id}", async (int id, AppDbContext context) =>
@@ -66,13 +75,13 @@ app.MapDelete("/usuario/{id}", async (int id, AppDbContext context) =>
    
     if (usuario is null)
     {
-        return Results.NotFound("Usuário não encontrado");
+        return Results.NotFound("Usuï¿½rio nï¿½o encontrado");
     }
 
     context.Remove(usuario);
     await context.SaveChangesAsync();
 
-    return Results.Ok("Usuário deletado com sucesso");
+    return Results.Ok("Usuï¿½rio deletado com sucesso");
 });
 
 // endpoints de tarefas
@@ -80,7 +89,7 @@ app.MapPost("/tarefa", async (Tarefa tarefa, AppDbContext context) =>
 {
     var usuario = await context.Usuario.FindAsync(tarefa.UsuarioId);
     if (usuario is null)
-        return Results.BadRequest("Usuário não encontrado");
+        return Results.BadRequest("Usuï¿½rio nï¿½o encontrado");
 
     tarefa.DataCriacao = DateTime.Now;
     tarefa.Status = StatusTarefa.Pendente;
@@ -110,9 +119,21 @@ app.MapGet("/tarefa/{id}", async (int id, AppDbContext context) =>
         .FirstOrDefaultAsync(t => t.Id == id);
 
     if (tarefa is null)
-        return Results.NotFound("Tarefa não encontrada");
+        return Results.NotFound("Tarefa nï¿½o encontrada");
 
     return Results.Ok(tarefa);
+});
+
+app.MapGet("/tarefa/usuario/{id}", async (int id, AppDbContext context) =>
+{
+    var tarefas = await context.Tarefa
+        .Include(t => t.Usuario)
+        .Where(t => t.UsuarioId == id)
+        .ToListAsync();
+
+    return tarefas.Any() 
+        ? Results.Ok(tarefas)
+        : Results.NotFound("Nenhuma tarefa encontrada para esse usuÃ¡rio");
 });
 
 app.MapPut("/tarefa/{id}", async (int id, Tarefa tarefaAtualizada, AppDbContext context) =>
@@ -120,7 +141,7 @@ app.MapPut("/tarefa/{id}", async (int id, Tarefa tarefaAtualizada, AppDbContext 
     var tarefa = await context.Tarefa.FindAsync(id);
 
     if (tarefa is null)
-        return Results.NotFound("Tarefa não encontrada");
+        return Results.NotFound("Tarefa nï¿½o encontrada");
 
     tarefa.Titulo = tarefaAtualizada.Titulo;
     tarefa.Descricao = tarefaAtualizada.Descricao;
@@ -136,7 +157,7 @@ app.MapDelete("/tarefa/{id}", async (int id, AppDbContext context) =>
     var tarefa = await context.Tarefa.FindAsync(id);
 
     if (tarefa is null)
-        return Results.NotFound("Tarefa não encontrada");
+        return Results.NotFound("Tarefa nï¿½o encontrada");
 
     context.Tarefa.Remove(tarefa);
     await context.SaveChangesAsync();
@@ -149,13 +170,13 @@ app.MapPost("/tarefa/concluir/{id}", async (int id, AppDbContext context) =>
     var tarefa = await context.Tarefa.FindAsync(id);
 
     if (tarefa is null)
-        return Results.NotFound("Tarefa não encontrada");
+        return Results.NotFound("Tarefa nï¿½o encontrada");
 
     tarefa.Status = StatusTarefa.Concluido;
 
     await context.SaveChangesAsync();
 
-    return Results.Ok("Você concluiu a tarefa " + tarefa.Titulo);
+    return Results.Ok("Vocï¿½ concluiu a tarefa " + tarefa.Titulo);
 });
 
 app.Run();
